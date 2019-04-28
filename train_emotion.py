@@ -12,23 +12,26 @@ from CohnKanadeDataset import CohnKanadeDataset
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 import pickle
+import os
 
 
 image_height = 64
 image_width = 64
 image_n_channels = 1
 
-n_epochs = 300
+n_epochs = 100
 batch_size = 10
 
 initial_learning_rate = 0.001
 decay_steps = 2000
 decay_rate = 1/2
 
-reg_constant = 0.05
+reg_constant = 0
 
 EMOTION_DECODER_PATH = "./model/emotion_decoder.pickle"
 EMOTION_PREDICTION_MODEL_PATH = "./model/emotion_model1"
+
+COHN_KANADE_DATA_FILE_PATH = "./data/cohn_kanade.pickle"
 
 
 def prepare_emotion_data():
@@ -99,48 +102,51 @@ def train_emotion_model(X_train, X_test, y_train, y_test):
 #        
         residual1 = tf.layers.conv2d(X, filters=16, kernel_size=4,
                                 strides=4, padding='SAME',
-                                activation=tf.nn.relu, name="residual1")
+                                activation=tf.nn.elu, name="residual1")
 
         conv11 = tf.layers.conv2d(X, filters=8, kernel_size=2,
                                 strides=1, padding='SAME',
-                                activation=tf.nn.relu, name="conv11")
+                                activation=tf.nn.elu, name="conv11")
 
         pool12 = tf.nn.max_pool(conv11, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
         conv13 = tf.layers.conv2d(pool12, filters=16, kernel_size=4,
                                 strides=1, padding='SAME',
-                                activation=tf.nn.relu, name="conv13")
+                                activation=tf.nn.elu, name="conv13")
 
         pool14 = tf.nn.max_pool(conv13, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
         layer1_out = tf.add(residual1, pool14)
 #
-
+        layer1_out_drop = tf.layers.dropout(layer1_out, 0.2, training=training)
 #        
-        residual2 = tf.layers.conv2d(layer1_out, filters=64, kernel_size=4,
+        residual2 = tf.layers.conv2d(layer1_out_drop, filters=64, kernel_size=4,
                                 strides=4, padding='SAME',
-                                activation=tf.nn.relu, name="residual2")
+                                activation=tf.nn.elu, name="residual2")
 
         conv21 = tf.layers.conv2d(layer1_out, filters=32, kernel_size=2,
                                 strides=1, padding='SAME',
-                                activation=tf.nn.relu, name="conv21")
+                                activation=tf.nn.elu, name="conv21")
 
         pool22 = tf.nn.max_pool(conv21, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
         conv23 = tf.layers.conv2d(pool22, filters=64, kernel_size=4,
                                 strides=1, padding='SAME',
-                                activation=tf.nn.relu, name="pool22")
+                                activation=tf.nn.elu, name="pool22")
 
         pool24 = tf.nn.max_pool(conv23, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
         layer2_out = tf.add(residual2, pool24)
- #       
+ #      
        
         pool4_flat = tf.reshape(layer2_out, shape=[-1, 64 * 4 * 4])
-        pool4_flat_drop = tf.layers.dropout(pool4_flat, 0.0, training=training)
+        pool4_flat_drop = tf.layers.dropout(pool4_flat, 0.5, training=training)
 
-        fc1 = tf.layers.dense(pool4_flat_drop, 32, activation=tf.nn.relu, name="fc1")
-        logits_emotion = tf.layers.dense(fc1, num_emotion_outputs, name="logits_emotion")
+        fc1 = tf.layers.dense(pool4_flat_drop, 32, activation=tf.nn.elu, name="fc1")
+
+        fc1_drop = tf.layers.dropout(fc1, 0.5, training=training)
+
+        logits_emotion = tf.layers.dense(fc1_drop, num_emotion_outputs, name="logits_emotion")
         Y_proba_emotion = tf.nn.softmax(logits_emotion, name="Y_proba_emotion")
 
         global_step = tf.Variable(0, trainable=False, name="global_step")
@@ -151,8 +157,8 @@ def train_emotion_model(X_train, X_test, y_train, y_test):
         loss_emotion = tf.reduce_mean(xentropy_emotion)
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         loss_emotion_reg = loss_emotion + reg_constant * sum(reg_losses)
-        #optimizer_emotion = tf.train.AdamOptimizer(learning_rate=learning_rate) # beta1=0.8
-        optimizer_emotion = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=True)
+        optimizer_emotion = tf.train.AdamOptimizer(learning_rate=learning_rate) # beta1=0.8
+        #optimizer_emotion = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=True)
         training_op_emotion = optimizer_emotion.minimize(loss_emotion_reg, global_step=global_step)
 
     with tf.name_scope("eval_emotion"):
@@ -174,23 +180,26 @@ def train_emotion_model(X_train, X_test, y_train, y_test):
                 train_emotion_sess.run(training_op_emotion, feed_dict={X: X_batch, y: y_batch, training: True})
             
             acc_batch = accuracy_emotion.eval(feed_dict={X: X_batch, y: y_batch})
-            acc_train = accuracy_emotion.eval(feed_dict={X: X_train[1:100], y: y_train[1:100]})
+            acc_train = accuracy_emotion.eval(feed_dict={X: X_train[1:200], y: y_train[1:200]})
             acc_test = accuracy_emotion.eval(feed_dict={X: X_test, y: y_test})
             print(epoch, "Last batch accuracy:", acc_batch, "Train accuracy:", acc_train, "Test accuracy:", acc_test)
 
             save_path_emotion = saver.save(train_emotion_sess, EMOTION_PREDICTION_MODEL_PATH)
 
 def main():
-    dataset = CohnKanadeDataset()
-    dataset.read()
 
-    X_train, X_test, y_train, y_test = prepare_emotion_data()
+    if os.path.isfile(COHN_KANADE_DATA_FILE_PATH):
+        X_train, X_test, y_train, y_test = pickle.load(open(COHN_KANADE_DATA_FILE_PATH, 'rb'))
+    else:
+        X_train, X_test, y_train, y_test = prepare_emotion_data()
+        X_train, y_train = over_sample(X_train, y_train)
+        X_test, y_test = over_sample(X_test, y_test)
+        pickle.dump([X_train, X_test, y_train, y_test], open(COHN_KANADE_DATA_FILE_PATH, 'wb'))
     
     print(len(X_train))
     emotion_decoder = create_emotion_decoder()
 
-    X_train, y_train = over_sample(X_train, y_train)
-    X_test, y_test = over_sample(X_test, y_test)
+    
     
     train_emotion_model(X_train, X_test, y_train, y_test)
 

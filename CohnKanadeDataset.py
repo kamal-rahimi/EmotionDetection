@@ -7,10 +7,6 @@ from cvision_tools import detect_face, crop_face, convert_to_gray, resize_with_p
 
 from sklearn.model_selection import train_test_split
 
-image_height = 100
-image_width = 100
-image_n_channels = 1 
-
 CK_IMAGE_PATH = "data/ck/CK+/extended-cohn-kanade-images/cohn-kanade-images/"
 CK_INFO_PATH  = "data/ck/CK+/Emotion_labels/Emotion/"
 
@@ -25,7 +21,7 @@ class CohnKanadeDataset():
         self.y_valid = None
         self.y_test = None
     
-    def read(self, test_size=0.2, valid_size=0, gray=True):
+    def read(self, test_size=0.2, valid_size=0, gray=True, image_height=100, image_width=100, image_n_channels=1 ):
         images, labels = self.read_ck_data()
         images = np.array(images)
         faces = [crop_face(image) for image in images]
@@ -59,6 +55,7 @@ class CohnKanadeDataset():
                 info_files = os.listdir(subject_folder_info_path)
                 if info_files:
                     first_image_file = image_file[0]
+                    midle_image_file = image_file[len(image_file)//2]
                     last_image_file = image_file[-1]
                     info_file = info_files[0]
                     
@@ -67,6 +64,13 @@ class CohnKanadeDataset():
                     subject_info_file_path  = os.path.join(subject_folder_info_path, info_file)
                     image, label = self.read_ck_subject(subject_image_file_path, subject_info_file_path)
                     label = 0
+                    images.append(image)
+                    labels.append(label)
+
+                    # Read middle image and emotion label
+                    subject_image_file_path = os.path.join(subject_folder_image_path, midle_image_file)
+                    subject_info_file_path  = os.path.join(subject_folder_info_path, info_file)
+                    image, label = self.read_ck_subject(subject_image_file_path, subject_info_file_path)
                     images.append(image)
                     labels.append(label)
 
