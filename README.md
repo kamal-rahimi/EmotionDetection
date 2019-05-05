@@ -52,7 +52,7 @@ The network stucture is depicted below:
 						    | dropuot 20% |
 						    |-------------|
 							   |
-                             |-----------------------------|  
+			     |-----------------------------|  
 			     |				   |
 			     |			 |-------------------|
 			     |			 | conv2D (32,2x2,1)  | 
@@ -93,11 +93,11 @@ The network stucture is depicted below:
 					        | fully-connected (8)  |
 					        |----------------------|
 							   |
-			        |-------------------------------------------------------- -|
-			        |               	softmax                            |
-	                        |----------------------------------------------------------|
+			         |----------------------------------------------------------|
+			         |               	softmax                             |
+	                         |----------------------------------------------------------|
 	                             |     |       |       |      |    |      |       |
-                                  neutral anger contempt disgust fear happy sadness surprise
+				  neutral anger contempt disgust fear happy sadness surprise
 
 
 ## How to use the model
