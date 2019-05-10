@@ -49,13 +49,13 @@ The network stucture is depicted below:
 						   |----------------|
 							   |
 						    |-------------|
-						    | dropuot 20% |
+						    | dropuot 30% |
 						    |-------------|
 							   |
 			     |-----------------------------|  
 			     |				   |
 			     |			 |-------------------|
-			     |			 | conv2D (32,2x2,1)  | 
+			     |			 | conv2D (32,2x2,1) | 
 			     |			 | ACT: ELU          |
 	        	     |			 |-------------------|
 	        	     |	       			   |
@@ -77,7 +77,7 @@ The network stucture is depicted below:
 						   |----------------|
 							   |
 						    |-------------|
-						    | dropuot 20% |
+						    | dropuot 50% |
 						    |-------------|
 							   |
 					       |------------------------|
@@ -119,8 +119,8 @@ Example usage:
 ```
 $ python3 predict.py -p "./data/test/image.jpg"
 ```
-when no image path is provided, facial emotion is detected fot each image file in "./data/test/i" directory.
+When no image path is provided, facial emotion is detected for each image file in "./data/test/" directory.
 
-The recognized Emotion and model confidence (probabity of the predicted emotion) will be shown in the image.
+The recognized emotion and model confidence (probabity of the predicted emotion) will be shown in the image.
 
 
