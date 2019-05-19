@@ -15,7 +15,7 @@ The train data is 784 face images from Cohn-Kanade dataset. The test data is ano
 
 The model can predict facial emotion in test data with accuracy of 85%.
 
-The network stucture is depicted below: 
+The network stucture is depicted below. The notaion (X, Y x Y, S) denotes that the layer has X filters and uses Y x Y kernel with stride S.  
 
 						      Input image
 					      		   |
