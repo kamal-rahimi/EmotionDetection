@@ -118,7 +118,7 @@ def train_emotion_model(X_train, X_test, y_train, y_test):
 
         layer1_out = tf.add(residual1, pool14)
 #
-        layer1_out_drop = tf.layers.dropout(layer1_out, 0.2, training=training)
+        layer1_out_drop = tf.layers.dropout(layer1_out, 0.3, training=training)
 #        
         residual2 = tf.layers.conv2d(layer1_out_drop, filters=64, kernel_size=4,
                                 strides=4, padding='SAME',
@@ -192,6 +192,8 @@ def main():
         X_train, X_test, y_train, y_test = pickle.load(open(COHN_KANADE_DATA_FILE_PATH, 'rb'))
     else:
         X_train, X_test, y_train, y_test = prepare_emotion_data()
+        print(len(X_train))
+        print(len(X_test))
         X_train, y_train = over_sample(X_train, y_train)
         X_test, y_test = over_sample(X_test, y_test)
         pickle.dump([X_train, X_test, y_train, y_test], open(COHN_KANADE_DATA_FILE_PATH, 'wb'))
