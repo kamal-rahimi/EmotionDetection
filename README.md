@@ -81,7 +81,7 @@ The network stucture is depicted below. The notaion (X, Y x Y, S) denotes that t
 						    |-------------|
 							   |
 					       |------------------------|
-					       | fully-connected (2048) |
+					       | fully-connected (1024) |
 					       | ACT: ELU               |
 					       |------------------------|
 							   |
